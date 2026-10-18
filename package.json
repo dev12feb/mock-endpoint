@@ -1,0 +1,12 @@
+{
+  "name": "cpi-practice-target",
+  "version": "3.0.0",
+  "description": "Mock target system for SAP CPI / APIM / AEM practice (OAuth2, JSON + XML)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "express": "^4.19.2",
+    "fast-xml-parser": "^4.4.1"
+  }
+}
