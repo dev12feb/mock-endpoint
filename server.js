@@ -26,6 +26,7 @@ const API_KEY = env.API_KEY || "abc123";
 const TOKEN_TTL = Number(env.TOKEN_TTL || 3600); // seconds
 const TOKEN_KEY = env.TOKEN_SECRET || CLIENT_SECRET;
 const ADMIN_KEY = env.ADMIN_KEY || ""; // if set, /admin and /logs need it
+const JSON_ONLY = (env.JSON_ONLY || "on").toLowerCase() !== "off"; // on = only application/json accepted (set JSON_ONLY=off on Render to allow XML again)
 
 // Runtime switches (change via /admin, reset on restart)
 const state = {
@@ -83,6 +84,7 @@ function parseBody(req) {
 
 // Reply in XML if client asks (Accept) or, when Accept is unclear, if it sent XML.
 function wantsXml(req) {
+  if (JSON_ONLY) return false;
   const accept = (req.headers["accept"] || "").toLowerCase();
   if (accept.includes("xml")) return true;
   if (accept.includes("json")) return false;
@@ -239,6 +241,17 @@ function authenticate(req, res, next) {
 }
 
 app.use(["/api", "/sales-report"], simulateFailures, authenticate);
+
+// JSON-only rule for /api (415 if Content-Type is not application/json)
+function requireJson(req, res, next) {
+  if (!JSON_ONLY) return next();
+  const hasBody = ["POST", "PUT", "PATCH"].includes(req.method);
+  const ct = (req.headers["content-type"] || "").toLowerCase();
+  if (hasBody && !ct.includes("application/json"))
+    return fail(req, res, 415, "UNSUPPORTED_MEDIA_TYPE", "Only application/json is supported");
+  next();
+}
+app.use("/api", requireJson);
 
 // ---------------------------------------------------------------------
 // Order handling
